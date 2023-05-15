@@ -178,7 +178,7 @@ def expande(tree, env, mostrar):
     return raiz, obj
 
 # Verifica se a árvore já atingiu o objetivo
-def atingiuObj(tree, env, mostrar):
+def atingiuObj(tree):
     ''' Verifica se atingiu o objetivo 
     
     Entrada: um nó da árvore
@@ -201,19 +201,11 @@ def atingiuObj(tree, env, mostrar):
     # 3) Se nenhum dos anteriores retornou, para cada movimento "k" e valor "v" possível do dicionário moves:
     #       chama recursivamente atingiuObj com o filho do movimento "k" e recebe obj, acoes
     #       Se obj for verdadeiro, retorna obj e a lista de acoes concatenado com "v"
-    acoes = []
-    obj = False
-    filho = tree
-    filho.filhos = {}
     for k, v in moves.items():
-        estado, x, over = emula(acoes + [v], env, mostrar)
-        obj             = obj or checaObj(estado, x)
-        filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
-                                pai=filho, terminal=over, obj=obj)
-        obj, acoes = atingiuObj(filho.filhos[k], env, mostrar)  # Chama recursivamente atingiuObj com o filho do movimento "k"
-        if obj:
-            return obj, acoes + [v]  # Retorna o resultado (True) e a lista de ações concatenada com "v"
-
+        obj, acoes = atingiuObj(tree.filhos[k])
+        if obj == True:
+            return obj, acoes + [v]
+    
     # 4) Se chegar ao final do laço sem retorna, retorne falso e vazio
     return False, []
     
@@ -235,7 +227,7 @@ def astar():
         tree = pickle.load(open('AstarTree.pkl', 'rb'))
 
     # Repete enquanto não atingir objetivo    
-    obj, acoes  = atingiuObj(tree, env, mostrar)
+    obj, acoes  = atingiuObj(tree)
 
     while not obj:
         tree, obj = expande(tree, env, mostrar)
