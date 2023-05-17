@@ -9,6 +9,7 @@ import sys
 import os
 import pickle
 import retro
+from random import choice
 
 from rominfo import *
 from utils import *
@@ -74,9 +75,10 @@ def melhor_filho(tree):
     lista_f = []
     for index, filho in enumerate(lista_filhos):
         lista_f.append([filho.g + filho.h, index])
-    
-    melhor_filho_f = min(lista_f)
-    return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
+    melhor_f = min(lista_f)
+    candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
+    escolhido = choice(range(len(candidatos)))
+    return lista_filhos[escolhido], lista_filhos[escolhido].g + lista_filhos[escolhido].h
 
 
 # Nossa heurística é a quantidade
@@ -214,7 +216,7 @@ def atingiuObj(tree):
 def astar():
     
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = False
+    mostrar = True
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
