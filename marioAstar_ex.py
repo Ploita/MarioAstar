@@ -9,6 +9,7 @@ import sys
 import os
 import pickle
 import retro
+from random import choice
 
 from rominfo import *
 from utils import *
@@ -39,7 +40,7 @@ class Tree:
         return self.estado
   
   
-def melhor_filho(tree):
+def melhor_filho(tree, depth):
     '''
     Encontra o melhor filho do nós representado por tree.
     
@@ -61,7 +62,7 @@ def melhor_filho(tree):
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
     lista_filhos = []
     for filho in tree.filhos:
-        no_filho, _ = melhor_filho(tree.filhos[filho]) 
+        no_filho, _ = melhor_filho(tree.filhos[filho], depth + 1) 
         if no_filho is not None:
             lista_filhos.append(no_filho)
 
@@ -75,6 +76,13 @@ def melhor_filho(tree):
     for index, filho in enumerate(lista_filhos):
         lista_f.append([filho.g + filho.h, index])
     
+    #Para voltar a proposta original, delete este if
+    if depth > 200:
+        melhor_f = min(lista_f)
+        candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
+        escolhido = choice(range(len(candidatos)))
+        return lista_filhos[escolhido], lista_filhos[escolhido].g + lista_filhos[escolhido].h
+     
     melhor_filho_f = min(lista_f)
     return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
 
@@ -134,7 +142,7 @@ def expande(tree, env, mostrar):
     else:
 
         # Busca pelo melhor nó folha
-        filho, score = melhor_filho(tree)     
+        filho, score = melhor_filho(tree, 1)     
         
         # Retorna para a raiz gravando as ações efetuadas
         raiz = filho
@@ -214,7 +222,7 @@ def atingiuObj(tree):
 def astar():
     
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = False
+    mostrar = True
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
