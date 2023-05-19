@@ -76,6 +76,7 @@ def melhor_filho(tree, depth):
     for index, filho in enumerate(lista_filhos):
         lista_f.append([filho.g + filho.h, index])
     
+    #Para voltar a proposta original, delete este if
     if depth > 200:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
