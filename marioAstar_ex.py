@@ -77,7 +77,7 @@ def melhor_filho(tree, depth):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if depth > 210:
+    if depth > 250:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
@@ -86,6 +86,19 @@ def melhor_filho(tree, depth):
     melhor_filho_f = min(lista_f)
     return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
 
+def explora(tree):
+    
+    if tree.eh_terminal:
+        return True
+    
+    if tree.filhos is None:
+        return False
+    
+    no_filho = [explora(tree.filhos[filho]) for filho in tree.filhos]
+    if all(no_filho):
+        return True
+    return False
+    
 
 # Nossa heurística é a quantidade
 # de passos mínimos estimados para
@@ -120,11 +133,11 @@ def emula(acoes, env, mostrar):
         performAction(a, env)
         if mostrar:
             env.render()
-
+    over = False
     estado, x, y = getState(getRam(env), raio)
     if env.data.is_done() or y > 400:
-        y = True
-    return estado, x, y
+        over = True
+    return estado, x, over
     
 # Expande a árvore utilizando a heurística
 def expande(tree, env, mostrar):
@@ -135,6 +148,7 @@ def expande(tree, env, mostrar):
     '''
     
     acoes = []
+    
     # Se a árvore já for um nó folha
     # não tem ações a serem feitas 
     if folha(tree):
@@ -182,7 +196,7 @@ def expande(tree, env, mostrar):
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
     print('FALTA: ', heuristica(estado, maxX))
-        
+    filho.eh_terminal = explora(filho)
     return raiz, obj
 
 # Verifica se a árvore já atingiu o objetivo
