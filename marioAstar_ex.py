@@ -62,9 +62,9 @@ def melhor_filho(tree, depth):
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
     lista_filhos = []
     for filho in tree.filhos:
-        no_filho, _ = melhor_filho(tree.filhos[filho], depth + 1) 
+        no_filho = melhor_filho(tree.filhos[filho], depth + 1) 
         if no_filho is not None:
-            lista_filhos.append(no_filho)
+            lista_filhos.append(no_filho[0])
 
     # 4) Se todos os filhos resultarem em terminal, marca tree como terminal e retorna None
     if not lista_filhos:
@@ -77,7 +77,7 @@ def melhor_filho(tree, depth):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if depth > 260:
+    if depth > 210:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
@@ -181,7 +181,6 @@ def expande(tree, env, mostrar):
         obj             = obj or checaObj(estado, x)
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
-        
     print('FALTA: ', heuristica(estado, maxX))
         
     return raiz, obj
@@ -217,7 +216,7 @@ def atingiuObj(tree):
     
     # 4) Se chegar ao final do laço sem retorna, retorne falso e vazio
     return False, []
-    
+
 
 # Gera a árvore utilizando A*
 def astar():
