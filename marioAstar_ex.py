@@ -77,7 +77,7 @@ def melhor_filho(tree):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if tree.g > 200:
+    if tree.g > 300:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
@@ -168,7 +168,7 @@ def expande(tree, env, mostrar):
         
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    print('ACOES:  (  ', len(acoes), ' ): ',  acoes[130:])
+    print('ACOES:  (  ', filho.g, ' ): ',  acoes[300:])
         
     # Vamos assumir que não atingiu o objetivo
     obj = False
@@ -223,7 +223,7 @@ def atingiuObj(tree):
 def astar():
     
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = 0
+    mostrar = 1
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
