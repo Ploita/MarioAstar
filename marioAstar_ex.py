@@ -40,7 +40,7 @@ class Tree:
         return self.estado
   
   
-def melhor_filho(tree, depth):
+def melhor_filho(tree):
     '''
     Encontra o melhor filho do nós representado por tree.
     
@@ -62,7 +62,7 @@ def melhor_filho(tree, depth):
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
     lista_filhos = []
     for filho in tree.filhos:
-        no_filho = melhor_filho(tree.filhos[filho], depth + 1) 
+        no_filho = melhor_filho(tree.filhos[filho]) 
         if no_filho is not None:
             lista_filhos.append(no_filho[0])
 
@@ -77,7 +77,7 @@ def melhor_filho(tree, depth):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if depth > 250:
+    if tree.g > 110:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
@@ -86,19 +86,6 @@ def melhor_filho(tree, depth):
     melhor_filho_f = min(lista_f)
     return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
 
-def explora(tree):
-    
-    if tree.eh_terminal:
-        return True
-    
-    if tree.filhos is None:
-        return False
-    
-    no_filho = [explora(tree.filhos[filho]) for filho in tree.filhos]
-    if all(no_filho):
-        return True
-    return False
-    
 
 # Nossa heurística é a quantidade
 # de passos mínimos estimados para
@@ -148,7 +135,7 @@ def expande(tree, env, mostrar):
     '''
     
     acoes = []
-    
+
     # Se a árvore já for um nó folha
     # não tem ações a serem feitas 
     if folha(tree):
@@ -157,7 +144,7 @@ def expande(tree, env, mostrar):
     else:
 
         # Busca pelo melhor nó folha
-        filho, score = melhor_filho(tree, 1)     
+        filho, score = melhor_filho(tree)
         
         # Retorna para a raiz gravando as ações efetuadas
         raiz = filho
@@ -181,7 +168,7 @@ def expande(tree, env, mostrar):
         
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    print('ACOES:  (  ', len(acoes), ' ): ',  acoes[210:])
+    print('ACOES:  (  ', len(acoes), ' ): ',  acoes[130:])
         
     # Vamos assumir que não atingiu o objetivo
     obj = False
@@ -196,7 +183,7 @@ def expande(tree, env, mostrar):
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
     print('FALTA: ', heuristica(estado, maxX))
-    filho.eh_terminal = explora(filho)
+        
     return raiz, obj
 
 # Verifica se a árvore já atingiu o objetivo
@@ -236,7 +223,7 @@ def atingiuObj(tree):
 def astar():
     
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = 1
+    mostrar = 0
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
