@@ -246,9 +246,10 @@ def astar():
         pickle.dump(tree, fw)
         fw.close()
         
-    obj, acoes = atingiuObj(tree, env, mostrar)
+    obj, acoes = atingiuObj(tree)
+    print(acoes[300:])
     mostrar    = True
-    emula(acoes, mostrar)
+    emula(acoes, env, mostrar)
 
     return tree
   
