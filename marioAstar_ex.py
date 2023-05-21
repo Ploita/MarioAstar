@@ -77,7 +77,7 @@ def melhor_filho(tree):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if tree.g > 110:
+    if tree.g > 200:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
