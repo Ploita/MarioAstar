@@ -40,7 +40,7 @@ class Tree:
         return self.estado
   
   
-def melhor_filho(tree, depth):
+def melhor_filho(tree):
     '''
     Encontra o melhor filho do nós representado por tree.
     
@@ -62,7 +62,7 @@ def melhor_filho(tree, depth):
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
     lista_filhos = []
     for filho in tree.filhos:
-        no_filho = melhor_filho(tree.filhos[filho], depth + 1) 
+        no_filho = melhor_filho(tree.filhos[filho]) 
         if no_filho is not None:
             lista_filhos.append(no_filho[0])
 
@@ -77,7 +77,7 @@ def melhor_filho(tree, depth):
         lista_f.append([filho.g + filho.h, index])
     
     #Para voltar a proposta original, delete este if
-    if depth > 210:
+    if tree.g > 300:
         melhor_f = min(lista_f)
         candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
         escolhido = choice(range(len(candidatos)))
@@ -120,11 +120,11 @@ def emula(acoes, env, mostrar):
         performAction(a, env)
         if mostrar:
             env.render()
-
+    over = False
     estado, x, y = getState(getRam(env), raio)
     if env.data.is_done() or y > 400:
-        y = True
-    return estado, x, y
+        over = True
+    return estado, x, over
     
 # Expande a árvore utilizando a heurística
 def expande(tree, env, mostrar):
@@ -135,6 +135,7 @@ def expande(tree, env, mostrar):
     '''
     
     acoes = []
+
     # Se a árvore já for um nó folha
     # não tem ações a serem feitas 
     if folha(tree):
@@ -143,7 +144,7 @@ def expande(tree, env, mostrar):
     else:
 
         # Busca pelo melhor nó folha
-        filho, score = melhor_filho(tree, 1)     
+        filho, score = melhor_filho(tree)
         
         # Retorna para a raiz gravando as ações efetuadas
         raiz = filho
@@ -167,7 +168,7 @@ def expande(tree, env, mostrar):
         
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    print('ACOES:  (  ', len(acoes), ' ): ',  acoes[210:])
+    print('ACOES:  (  ', filho.g, ' ): ',  acoes[300:])
         
     # Vamos assumir que não atingiu o objetivo
     obj = False
@@ -178,7 +179,8 @@ def expande(tree, env, mostrar):
     for k, v in moves.items():
         estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar)
         maxX            = max(x, maxX)
-        obj             = obj or checaObj(estado, x)
+        if obj or obj or checaObj(estado, x):
+            obj = True
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
     print('FALTA: ', heuristica(estado, maxX))
@@ -245,9 +247,10 @@ def astar():
         pickle.dump(tree, fw)
         fw.close()
         
-    obj, acoes = atingiuObj(tree, env, mostrar)
+    obj, acoes = atingiuObj(tree)
+    print(acoes)
     mostrar    = True
-    emula(acoes, mostrar)
+    emula(tree, env, mostrar)
 
     return tree
   
