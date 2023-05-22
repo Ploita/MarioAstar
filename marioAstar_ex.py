@@ -250,7 +250,7 @@ def astar():
     obj, acoes = atingiuObj(tree)
     print(acoes)
     mostrar    = True
-    emula(, env, mostrar)
+    emula(tree, env, mostrar)
 
     return tree
   
