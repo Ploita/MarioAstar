@@ -179,7 +179,8 @@ def expande(tree, env, mostrar):
     for k, v in moves.items():
         estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar)
         maxX            = max(x, maxX)
-        obj             = obj or checaObj(estado, x)
+        if obj or obj or checaObj(estado, x):
+            obj = True
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
     print('FALTA: ', heuristica(estado, maxX))
@@ -247,9 +248,9 @@ def astar():
         fw.close()
         
     obj, acoes = atingiuObj(tree)
-    print(acoes[300:])
+    print(acoes)
     mostrar    = True
-    emula(acoes, env, mostrar)
+    emula(, env, mostrar)
 
     return tree
   
