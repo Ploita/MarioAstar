@@ -179,8 +179,9 @@ def expande(tree, env, mostrar):
     for k, v in moves.items():
         estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar)
         maxX            = max(x, maxX)
-        if obj or obj or checaObj(estado, x):
+        if obj or checaObj(estado, x):
             obj = True
+            over = True
         filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
                                     pai=filho, terminal=over, obj=obj)
     print('FALTA: ', heuristica(estado, maxX))
@@ -199,25 +200,30 @@ def atingiuObj(tree):
     # Complete as tarefas a seguir e remova a instrução pass
     
     # 1) Se o nó é terminal, retorna o valor de eh_obj e a lista vazia de ações
+    acoes =  []
+    filho, score = melhor_filho(tree)
+        
+        # Retorna para a raiz gravando as ações efetuadas
+    raiz = filho
 
-    if tree.eh_terminal:
-        return tree.eh_obj, []
-    
-    # 2) Se o conjunto de filhos é None, retorna falso e lista vazia, pois não atingiu o obj
-    
-    if tree.filhos is None:
-        return False, []
-    
-    # 3) Se nenhum dos anteriores retornou, para cada movimento "k" e valor "v" possível do dicionário moves:
-    #       chama recursivamente atingiuObj com o filho do movimento "k" e recebe obj, acoes
-    #       Se obj for verdadeiro, retorna obj e a lista de acoes concatenado com "v"
-    for k, v in moves.items():
-        obj, acoes = atingiuObj(tree.filhos[k])
-        if obj == True:
-            return obj, acoes + [v]
-    
-    # 4) Se chegar ao final do laço sem retorna, retorne falso e vazio
-    return False, []
+        # 1) Enquanto o pai de raiz não for None
+    while raiz.pai is not None:
+        
+        # 2) Atribua raiz a uma variável neto
+        neto = raiz
+
+        # 3) faça raiz = seu próprio pai
+        raiz = raiz.pai
+
+        # 4) verifique qual a ação de raiz leva ao nó neto
+        for k,v in moves.items():
+            temp1 = raiz.filhos[k]
+            if temp1.g + temp1.h == neto.g + neto.h:
+                acoes.append(v)
+        # 5) faça um append dessa ação na lista acoes
+        # inverte a lista de ações e imprime para debug
+    acoes.reverse()
+    return acoes
 
 
 # Gera a árvore utilizando A*
@@ -237,8 +243,8 @@ def astar():
         tree = pickle.load(open('AstarTree.pkl', 'rb'))
 
     # Repete enquanto não atingir objetivo    
-    obj, acoes  = atingiuObj(tree)
-
+    #obj, acoes  = atingiuObj(tree)
+    obj = True
     while not obj:
         tree, obj = expande(tree, env, mostrar)
 
@@ -247,10 +253,11 @@ def astar():
         pickle.dump(tree, fw)
         fw.close()
         
-    obj, acoes = atingiuObj(tree)
+    acoes = atingiuObj(tree)
     print(acoes)
     mostrar    = True
-    emula(tree, env, mostrar)
+    
+    emula(acoes, env, mostrar)
 
     return tree
   
