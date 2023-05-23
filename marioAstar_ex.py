@@ -30,7 +30,6 @@ class Tree:
         
         self.g = g
         self.h = h
-        
 
         self.eh_terminal = terminal
         self.eh_obj      = obj
@@ -111,7 +110,9 @@ def emula(acoes, env, mostrar):
             env.render()
     over = False
     estado, x, y = getState(getRam(env), raio)
-    if env.data.is_done() or y > 400:
+    if env.data.is_done() or y > 400: 
+        #Por algum motivo, o emulador não consegue percerber que quando o Mario
+        #está abaixo do solo o jogo deveria acabar, e ele continua rodando ad infinitum
         over = True
     return estado, x, over
     
@@ -204,7 +205,8 @@ def atingiuObj(tree):
     for index, filho in enumerate(tree.filhos):
         obj, acoes = atingiuObj(filho)
         if obj == True:
-            return obj, acoes + translate[index]
+            #Fiz um segundo dicionário para transpor a ordem dos filhos em ações
+            return obj, acoes + translate[index] 
     
     # 4) Se chegar ao final do laço sem retorna, retorne falso e vazio
     return False, []
@@ -238,7 +240,8 @@ def astar():
         fw.close()
         
     obj, acoes = atingiuObj(tree)
-    acoes.reverse()
+    #Acrescentei, porque pelo código original, o Mario saia fazendo as ações inversas
+    acoes.reverse() 
     print(acoes)
     mostrar    = True
     emula(tree, env, mostrar)
