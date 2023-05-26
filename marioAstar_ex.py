@@ -9,7 +9,6 @@ import sys
 import os
 import pickle
 import retro
-from random import choice
 
 from rominfo import *
 from utils import *
@@ -18,6 +17,7 @@ sys.setrecursionlimit(10000)
 
 # quais movimentos estarão disponíveis
 moves = {'direita':128, 'corre':130, 'pula':131, 'spin':386, 'esquerda':64}
+translate = {0: 128, 1: 130, 2: 131, 3: 386, 4: 64}
 
 # raio de visão (quadriculado raio x raio em torno do Mario)
 raio = 6
@@ -30,7 +30,7 @@ class Tree:
         
         self.g = g
         self.h = h
-        
+
         self.eh_terminal = terminal
         self.eh_obj      = obj
         
@@ -48,23 +48,21 @@ def melhor_filho(tree):
     Saída:   a tupla (t, f) com t sendo o melhor filho de tree e f a heurística g+h
              retorna None caso o nó seja terminal
     '''
-    
     # Implemente as tarefas abaixo e remove a instrução pass.
-    
     # 1) Se o nó é terminal, retorna None
     if tree.eh_terminal:
         return None
     
     # 2) Se o nó não tem filhos, retorna ele mesmo e seu f
     if tree.filhos is None:
-        return tree, tree.g + tree.h
+        return tree
 
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
     lista_filhos = []
     for filho in tree.filhos:
-        no_filho = melhor_filho(tree.filhos[filho]) 
+        no_filho = melhor_filho(filho) 
         if no_filho is not None:
-            lista_filhos.append(no_filho[0])
+            lista_filhos.append(no_filho)
 
     # 4) Se todos os filhos resultarem em terminal, marca tree como terminal e retorna None
     if not lista_filhos:
@@ -72,19 +70,9 @@ def melhor_filho(tree):
         return None
 
     # 5) Caso contrário retorna aquele com o menor f
-    lista_f = []
-    for index, filho in enumerate(lista_filhos):
-        lista_f.append([filho.g + filho.h, index])
-    
-    #Para voltar a proposta original, delete este if
-    if tree.g > 300:
-        melhor_f = min(lista_f)
-        candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
-        escolhido = choice(range(len(candidatos)))
-        return lista_filhos[escolhido], lista_filhos[escolhido].g + lista_filhos[escolhido].h
-     
-    melhor_filho_f = min(lista_f)
-    return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
+    lista_f = [[filho.g + filho.h, filho] for filho in lista_filhos]
+    melhor_f = min(lista_f, key = lambda x: x[0])[1]
+    return melhor_f
 
 
 # Nossa heurística é a quantidade
@@ -122,7 +110,9 @@ def emula(acoes, env, mostrar):
             env.render()
     over = False
     estado, x, y = getState(getRam(env), raio)
-    if env.data.is_done() or y > 400:
+    if env.data.is_done() or y > 400: 
+        #Por algum motivo, o emulador não consegue percerber que quando o Mario
+        #está abaixo do solo o jogo deveria acabar, e ele continua rodando ad infinitum
         over = True
     return estado, x, over
     
@@ -144,7 +134,7 @@ def expande(tree, env, mostrar):
     else:
 
         # Busca pelo melhor nó folha
-        filho, score = melhor_filho(tree)
+        filho = melhor_filho(tree)
         
         # Retorna para a raiz gravando as ações efetuadas
         raiz = filho
@@ -159,30 +149,31 @@ def expande(tree, env, mostrar):
             raiz = raiz.pai
 
         # 4) verifique qual a ação de raiz leva ao nó neto
-            for k,_ in moves.items():
+            for k,v in enumerate(moves.items()):
                 temp1 = raiz.filhos[k]
                 if temp1.g + temp1.h == neto.g + neto.h:
-                    acoes.append(k)
+                    acoes.append(v[0])
         # 5) faça um append dessa ação na lista acoes
 
         
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    print('ACOES:  (  ', filho.g, ' ): ',  acoes[300:])
-        
+    print('ACOES:  (  ', filho.g, ' ): ',  acoes[200:])
+    
     # Vamos assumir que não atingiu o objetivo
     obj = False
 
     # Gera cada um dos filhos e verifica se atingiu objetivo
-    filho.filhos = {}
+    filho.filhos = []
     maxX         = 0
     for k, v in moves.items():
         estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar)
         maxX            = max(x, maxX)
-        if obj or obj or checaObj(estado, x):
+        if obj or checaObj(estado, x):
             obj = True
-        filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
-                                    pai=filho, terminal=over, obj=obj)
+            over = True
+        filho.filhos.append(Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
+                                    pai=filho, terminal=over, obj=obj))
     print('FALTA: ', heuristica(estado, maxX))
         
     return raiz, obj
@@ -211,10 +202,10 @@ def atingiuObj(tree):
     # 3) Se nenhum dos anteriores retornou, para cada movimento "k" e valor "v" possível do dicionário moves:
     #       chama recursivamente atingiuObj com o filho do movimento "k" e recebe obj, acoes
     #       Se obj for verdadeiro, retorna obj e a lista de acoes concatenado com "v"
-    for k, v in moves.items():
-        obj, acoes = atingiuObj(tree.filhos[k])
+    for index, filho in enumerate(tree.filhos):
+        obj, acoes = atingiuObj(filho)
         if obj == True:
-            return obj, acoes + [v]
+            return obj, [translate[index]] + acoes
     
     # 4) Se chegar ao final do laço sem retorna, retorne falso e vazio
     return False, []
@@ -248,9 +239,10 @@ def astar():
         fw.close()
         
     obj, acoes = atingiuObj(tree)
+    acoes.insert(0, 131)
     print(acoes)
     mostrar    = True
-    emula(tree, env, mostrar)
+    emula(acoes, env, mostrar)
 
     return tree
   
