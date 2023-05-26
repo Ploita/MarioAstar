@@ -215,7 +215,7 @@ def atingiuObj(tree):
 def astar():
     
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = 1
+    mostrar = 0
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
