@@ -111,3 +111,27 @@ A = Tree('A', [B, C],None,0,6,False,False)
 _, temp = atingiuObj(A)
 temp.reverse()
 temp = 1
+
+import retro
+
+movie = retro.Movie('SuperMarioWorld-Snes-YoshiIsland1-000001.bk2')
+movie.step()
+
+env = retro.make(
+    game=movie.get_game(),
+    state=None,
+    # bk2s can contain any button presses, so allow everything
+    use_restricted_actions=retro.Actions.ALL,
+    players=movie.players,
+)
+env.initial_state = movie.get_state()
+env.reset()
+keys = []
+while movie.step():
+    
+    for p in range(movie.players):
+        for i in range(env.num_buttons):
+            keys.append(movie.get_key(i, p))
+    env.step(keys)
+
+print(keys)

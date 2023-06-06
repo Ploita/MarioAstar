@@ -233,7 +233,7 @@ def astar():
     mostrar = 1
  
     # Gera a árvore com o estado inicial do jogo 
-    env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
+    env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1, record = '.')  
     env.reset()
     estado, x, y = getState(getRam(env), raio)  
     tree         = Tree(estado, g=0, h=heuristica(estado,x))
