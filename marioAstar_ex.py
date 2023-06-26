@@ -9,6 +9,7 @@ import sys
 import os
 import pickle
 import retro
+import time
 from random import choice
 
 from rominfo import *
@@ -118,6 +119,7 @@ def emula(acoes, env, mostrar):
         a = acoes.pop(0)
         estado, xn, y = getState(getRam(env), raio)
         performAction(a, env)
+        time.sleep(0.023) #ajuda na visualização
         if mostrar:
             env.render()
     over = False
@@ -254,9 +256,7 @@ def astar():
         fw.close()
         
     acoes = atingiuObj(tree)
-    print(acoes)
     mostrar    = True
-    
     emula(acoes, env, mostrar)
 
     return tree
