@@ -1,3 +1,4 @@
+from __future__ import annotations
 #!/usr/bin/env python
 # marioAstar.py
 # Author: Fabrício Olivetti de França
@@ -8,10 +9,10 @@
 import sys
 import os
 import pickle
-import retro
+import retro # type: ignore
 import time
-from random import choice
-
+#from random import choice
+from retro import RetroEnv # type: ignore
 from rominfo import *
 from utils import *
 
@@ -25,9 +26,36 @@ raio = 6
 
 # Classe da árvore de jogos para o Super Mario World
 class Tree:
-    def __init__(self, estado, filhos=None, pai=None, g=0, h=0, terminal=False, obj=False):
-        self.estado   = estado
-        self.filhos   = filhos # lista de filhos desse nó
+    """
+        Classe da árvore de jogos para o Super Mario World
+    """
+
+    def __init__(self, estado: str, filhos: list[Tree] | None = None, pai: Tree | None = None, g: int = 0,
+                  h: int = 0, terminal: bool = False, obj: bool = False, contador: int = 1):
+        """Inicialização do nó/árvore
+
+        Parameters
+        ----------
+        estado : str
+            Representação N x N da tela do jogo, onde N é o raio de visão
+        filhos : list[Tree] | None, optional
+            Lista de nós filhos deste nó, by default None
+        pai : Tree | None, optional
+            Nó pai deste nó , by default None
+        g : int, optional
+            Valor de custo do Nó inicial até o Nó atual, pode ser lido como profundidade da árvore, by default 0
+        h : int, optional
+            Valor da heurística , by default 0
+        terminal : bool, optional
+            Indicador se o Nó atual é terminal, by default False
+        obj : bool, optional
+            Indicador se o Nó atual atingiu o objetivo, by default False
+        contador : int, optional
+            Numeração dos nós da árvore, by default 1
+        """
+
+        self.estado = estado
+        self.filhos = filhos 
         
         self.g = g
         self.h = h
@@ -35,37 +63,41 @@ class Tree:
         self.eh_terminal = terminal
         self.eh_obj      = obj
         
-        self.pai = pai # apontador para o pai, útil para fazer o backtracking
+        self.contador = contador
+        self.pai = pai
 
     def __str__(self):
-        return self.estado
+        return f"Tree(data={self.contador})"
   
-  
-def melhor_filho(tree):
-    '''
-    Encontra o melhor filho do nós representado por tree.
-    
-    Entrada: tree, o nó atual da árvore
-    Saída:   a tupla (t, f) com t sendo o melhor filho de tree e f a heurística g+h
-             retorna None caso o nó seja terminal
-    '''
-    
+
+def melhor_filho(tree: Tree) -> Tree | None:
+    """Encontra o melhor filho do nó
+
+    Parameters
+    ----------
+    tree : Tree
+        Nó atual da árvore
+
+    Returns
+    -------
+    Tree | None
+        Melhor nó filho ou None caso não haja nós filhos válidos
+    """
     # Implemente as tarefas abaixo e remove a instrução pass.
-    
     # 1) Se o nó é terminal, retorna None
     if tree.eh_terminal:
         return None
     
     # 2) Se o nó não tem filhos, retorna ele mesmo e seu f
     if tree.filhos is None:
-        return tree, tree.g + tree.h
+        return tree
 
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
-    lista_filhos = []
+    lista_filhos: list[Tree] = []
     for filho in tree.filhos:
-        no_filho = melhor_filho(tree.filhos[filho]) 
+        no_filho = melhor_filho(filho) 
         if no_filho is not None:
-            lista_filhos.append(no_filho[0])
+            lista_filhos.append(no_filho) 
 
     # 4) Se todos os filhos resultarem em terminal, marca tree como terminal e retorna None
     if not lista_filhos:
@@ -73,68 +105,128 @@ def melhor_filho(tree):
         return None
 
     # 5) Caso contrário retorna aquele com o menor f
-    lista_f = []
-    for index, filho in enumerate(lista_filhos):
-        lista_f.append([filho.g + filho.h, index])
+    lista_f = [[filho.g + filho.h, filho] for filho in lista_filhos]
     
-    #Para voltar a proposta original, delete este if
-    if tree.g > 300:
-        melhor_f = min(lista_f)
-        candidatos = [arvore for arvore in lista_f if arvore[0]== melhor_f[0]]
-        escolhido = choice(range(len(candidatos)))
-        return lista_filhos[escolhido], lista_filhos[escolhido].g + lista_filhos[escolhido].h
-     
-    melhor_filho_f = min(lista_f)
-    return lista_filhos[melhor_filho_f[1]], melhor_filho_f[0]
+    melhor_f: Tree
+    melhor_f =  min(lista_f, key = lambda x: x[0])[1] # type: ignore
+    # ? Tem um bug pra veificação de tipo aqui em cima que não soube ajeitar
+    
+    return melhor_f # type: ignore
 
 
-# Nossa heurística é a quantidade
-# de passos mínimos estimados para
-# chegar ao final da fase
-def heuristica(estado, x):
-#    return (4800 - x)/8
-    estNum = np.reshape(list(map(int, estado.split(','))), (2*raio+1,2*raio+1))
-    dist = np.abs(estNum[:raio+1,raio+2:raio+7]).sum()
+ 
+def heuristica(estado: str, x: int) -> int:
+    """Estima a quantidade de passos mínimos estimados para chegar ao final da fase
+
+    Parameters
+    ----------
+    estado : str
+        Representação N x N da tela do jogo, onde N é o raio de visão
+    x : int
+        Posição do Mario no eixo X
+
+    Returns
+    -------
+    int
+        Estimativa de passos para chegar ao final da fase
+    """
+    #//    return (4800 - x)/8
+    # todo entender e explicar isso aqui seria uma boa
+    estNum = np.reshape(list(map(int, estado.split(','))), (2*raio+1,2*raio+1)) #type: ignore
+    dist = np.abs(estNum[:raio+1,raio+2:raio+7]).sum() #type: ignore
+    # ? Tem um bug pra veificação de tipo aqui em cima que não soube ajeitar
+
     return ((4800 - x)/8) + 0.3*dist
  
-# Verifica se chegamos ao final   
-def checaObj(estado, x):
+
+def checaObj(estado: str, x: int) -> bool:
+    """Verifica se chegou ao final da fase
+
+    Parameters
+    ----------
+    estado : str
+        Representação N x N da tela do jogo, onde N é o raio de visão
+    x : int
+        Posição do Mario no eIXO x
+
+    Returns
+    -------
+    bool
+        Flag se atingiu o objetivo
+    """
     return x>4800
 
-# Verifica se um nó é uma folha 
-def folha(tree):
-    """ Verifica se tree é um nó folha. """
+def folha(tree: Tree) -> bool:
+    """ Verifica se tree é um nó folha
+
+    Parameters
+    ----------
+    tree : Tree
+        Nó atual da árvore
+
+    Returns
+    -------
+    bool
+        Flag se é folha
+    """
     # Um nó folha é aquele que não tem filhos.
     if tree.filhos is None:
         return True
     return False
 
-# Joga uma partida usando uma
-# sequência de ações
-def emula(acoes, env, mostrar):
+
+def emula(acoes: list[str], env: RetroEnv, mostrar: bool) -> tuple[str, int, bool]:
+    """Joga uma partida usando uma # sequência de ações
+
+    Parameters
+    ----------
+    acoes : list[str]
+        Lista de ações
+    env : RetroEnv
+        Ambiente do retro Gym
+    mostrar : bool
+        Flag de visualização
+
+    Returns
+    -------
+    tuple[str, int, bool]
+        Estado atual, posição do Mario no eixo X e flag de finalização do jogo
+    """
 
     env.reset()
 
-    while len(acoes)>0 and (not env.data.is_done()):
+    while len(acoes)>0 and (not env.data.is_done()): #type: ignore # ? type error aqui tb
         a = acoes.pop(0)
-        estado, xn, y = getState(getRam(env), raio)
+        estado, xn, y = getState(getRam(env), raio) #type: ignore #? type error
         performAction(a, env)
         time.sleep(0.023) #ajuda na visualização
         if mostrar:
             env.render()
     over = False
-    estado, x, y = getState(getRam(env), raio)
-    if env.data.is_done() or y > 400:
+    estado, x, y = getState(getRam(env), raio) #type: ignore #? type erro
+    if env.data.is_done() or y > 400: #type: ignore #? type erro
         over = True
-    return estado, x, over
+    return estado, x, over # type: ignore
+# ! o erro de tipo vem das funções em rominfo que não possuem declaração de tipo de retorno
     
 # Expande a árvore utilizando a heurística
-def expande(tree, env, mostrar):
-    '''Expande a árvore utilizando a heurística.
-    
-    Entrada: o nó raiz, o ambiente do retro Gym, booleano se devemos mostrar ou não a tela do jogo
-    Saída:   a própria raiz E se atingiu o objetivo
-    '''
+def expande(tree: Tree, env: RetroEnv, mostrar: bool) -> tuple[Tree, bool]:
+    """Expande a árvore utilizando a heurística 
+
+    Parameters
+    ----------
+    tree : Tree
+        Nó raiz
+    env : RetroEnv
+        Ambiente do retro Gym
+    mostrar : bool
+        Flag de visualização
+
+    Returns
+    -------
+    tuple[Tree, bool]
+        Nó raiz e flag se atingiu o objetivo
+    """
     
     acoes = []
 
@@ -146,107 +238,112 @@ def expande(tree, env, mostrar):
     else:
 
         # Busca pelo melhor nó folha
-        filho, score = melhor_filho(tree)
+        filho = melhor_filho(tree)
         
         # Retorna para a raiz gravando as ações efetuadas
         raiz = filho
 
         # 1) Enquanto o pai de raiz não for None
-        while raiz.pai is not None:
+        while raiz.pai is not None: # type: ignore
         
         # 2) Atribua raiz a uma variável neto
             neto = raiz
 
         # 3) faça raiz = seu próprio pai
-            raiz = raiz.pai
+            raiz = raiz.pai # type: ignore
 
         # 4) verifique qual a ação de raiz leva ao nó neto
             for k,_ in moves.items():
-                temp1 = raiz.filhos[k]
-                if temp1.g + temp1.h == neto.g + neto.h:
-                    acoes.append(k)
+                temp1 = raiz.filhos[k] # type: ignore
+                if temp1.g + temp1.h == neto.g + neto.h: # type: ignore
+                    acoes.append(k) # type: ignore
         # 5) faça um append dessa ação na lista acoes
 
         
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    print('ACOES:  (  ', filho.g, ' ): ',  acoes[300:])
+    print('ACOES:  (  ', filho.g, ' ): ',  acoes) # type: ignore
         
     # Vamos assumir que não atingiu o objetivo
     obj = False
 
     # Gera cada um dos filhos e verifica se atingiu objetivo
-    filho.filhos = {}
+    filho.filhos = {} # type: ignore
     maxX         = 0
     for k, v in moves.items():
-        estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar)
+        estado, x, over = emula([moves[acao] for acao in acoes] + [v], env, mostrar) # type: ignore
         maxX            = max(x, maxX)
         if obj or checaObj(estado, x):
             obj = True
             over = True
-        filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x),
+        filho.filhos[k] = Tree(estado, g=filho.g + 1, h=heuristica(estado,x), # type: ignore
                                     pai=filho, terminal=over, obj=obj)
-    print('FALTA: ', heuristica(estado, maxX))
+    print('FALTA: ', heuristica(estado, maxX)) # type: ignore
         
-    return raiz, obj
+    return raiz, obj # type: ignore
 
-# Verifica se a árvore já atingiu o objetivo
-def atingiuObj(tree):
-    ''' Verifica se atingiu o objetivo 
-    
-    Entrada: um nó da árvore
-    Saída:   (True, acoes) se atingiu o objetivo, sendo acoes a sequência de ações para chegar até ele.
-             (False, [])  se não atingiu o objetivo
-    '''
+
+def atingiuObj(tree: Tree) -> list[str]:
+    """Verifica se a árvore já atingiu o objetivo
+
+    Parameters
+    ----------
+    tree : Tree
+        Nó raiz da árvore
+
+    Returns
+    -------
+    list[str]
+        Lista de ações
+
+    """
     
     # Complete as tarefas a seguir e remova a instrução pass
     
     # 1) Se o nó é terminal, retorna o valor de eh_obj e a lista vazia de ações
     acoes =  []
-    filho, score = melhor_filho(tree)
+    filho = melhor_filho(tree)
         
         # Retorna para a raiz gravando as ações efetuadas
     raiz = filho
 
         # 1) Enquanto o pai de raiz não for None
-    while raiz.pai is not None:
+    while raiz.pai is not None: # type: ignore
         
         # 2) Atribua raiz a uma variável neto
         neto = raiz
 
         # 3) faça raiz = seu próprio pai
-        raiz = raiz.pai
+        raiz = raiz.pai # type: ignore
 
         # 4) verifique qual a ação de raiz leva ao nó neto
         for k,v in moves.items():
-            temp1 = raiz.filhos[k]
-            if temp1.g + temp1.h == neto.g + neto.h:
-                acoes.append(v)
+            temp1 = raiz.filhos[k] # type: ignore
+            if temp1.g + temp1.h == neto.g + neto.h: # type: ignore
+                acoes.append(v) # type: ignore
         # 5) faça um append dessa ação na lista acoes
         # inverte a lista de ações e imprime para debug
     acoes.reverse()
-    return acoes
+    return acoes # type: ignore
 
-
-# Gera a árvore utilizando A*
-def astar():
-    
+  
+def main():  
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = 1
+    mostrar = True
  
     # Gera a árvore com o estado inicial do jogo 
-    env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1, record = '.')  
+    env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1, record = '.')   # type: ignore
     env.reset()
-    estado, x, y = getState(getRam(env), raio)  
-    tree         = Tree(estado, g=0, h=heuristica(estado,x))
+    estado, x, y = getState(getRam(env), raio)   # type: ignore
+    tree         = Tree(estado, g=0, h=heuristica(estado,x)) # type: ignore
 
     # Se já existe alguma árvore, carrega
     if os.path.exists('AstarTree.pkl'):
         tree = pickle.load(open('AstarTree.pkl', 'rb'))
 
     # Repete enquanto não atingir objetivo    
-    #obj, acoes  = atingiuObj(tree)
-    obj = True
+    obj, acoes  = atingiuObj(tree)
+    #obj = True
     while not obj:
         tree, obj = expande(tree, env, mostrar)
 
@@ -258,11 +355,6 @@ def astar():
     acoes = atingiuObj(tree)
     mostrar    = True
     emula(acoes, env, mostrar)
-
-    return tree
-  
-def main():  
-  tree = astar()
     
 if __name__ == "__main__":
   main()
