@@ -1,3 +1,4 @@
+from __future__ import annotations
 #!/usr/bin/env python
 # marioAstar.py
 # Author: Fabrício Olivetti de França
@@ -10,6 +11,8 @@ import os
 import pickle
 import retro
 
+
+#from typing import 
 from rominfo import *
 from utils import *
 
@@ -22,25 +25,53 @@ translate = {0: 128, 1: 130, 2: 131, 3: 386, 4: 64}
 # raio de visão (quadriculado raio x raio em torno do Mario)
 raio = 6
 
-# Classe da árvore de jogos para o Super Mario World
+# todo Separar as classes Tree e Nó
 class Tree:
-    def __init__(self, estado, filhos=None, pai=None, g=0, h=0, terminal=False, obj=False):
-        self.estado   = estado
-        self.filhos   = filhos # lista de filhos desse nó
+    """
+        Classe da árvore de jogos para o Super Mario World
+    """
+
+    def __init__(self, estado: str, filhos: list[Tree] | None = None, pai: Tree | None = None, g: int = 0,
+                  h: int = 0, terminal: bool = False, obj: bool = False, contador: int = 1):
+        """Inicialização do nó/árvore
+
+        Parameters
+        ----------
+        estado : str
+            Representação N x N da tela do jogo, onde N é o raio de visão
+        filhos : list[Tree] | None, optional
+            Lista de nós filhos deste nó, by default None
+        pai : Tree | None, optional
+            Nó pai deste nó , by default None
+        g : int, optional
+            Valor de custo do Nó inicial até o Nó atual, pode ser lido como profundidade da árvore, by default 0
+        h : int, optional
+            Valor da heurística , by default 0
+        terminal : bool, optional
+            Indicador se o Nó atual é terminal, by default False
+        obj : bool, optional
+            Indicador se o Nó atual atingiu o objetivo, by default False
+        contador : int, optional
+            Numeração dos nós da árvore, by default 1
+        """
+
+        self.estado = estado
+        self.filhos = filhos 
         
         self.g = g
         self.h = h
-
+        
         self.eh_terminal = terminal
         self.eh_obj      = obj
         
-        self.pai = pai # apontador para o pai, útil para fazer o backtracking
+        self.contador = contador
+        self.pai = pai
 
     def __str__(self):
-        return self.estado
+        return f"Tree(data={self.contador})"
   
   
-def melhor_filho(tree):
+def melhor_filho(tree: Tree) -> Tree | None:
     '''
     Encontra o melhor filho do nós representado por tree.
     
@@ -58,11 +89,11 @@ def melhor_filho(tree):
         return tree
 
     # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
-    lista_filhos = []
+    lista_filhos: list[Tree] = []
     for filho in tree.filhos:
         no_filho = melhor_filho(filho) 
         if no_filho is not None:
-            lista_filhos.append(no_filho)
+            lista_filhos.append(no_filho) 
 
     # 4) Se todos os filhos resultarem em terminal, marca tree como terminal e retorna None
     if not lista_filhos:
@@ -71,14 +102,17 @@ def melhor_filho(tree):
 
     # 5) Caso contrário retorna aquele com o menor f
     lista_f = [[filho.g + filho.h, filho] for filho in lista_filhos]
-    melhor_f = min(lista_f, key = lambda x: x[0])[1]
+    
+    melhor_f: Tree
+    melhor_f =  min(lista_f, key = lambda x: x[0])[1] # type: ignore
+    
     return melhor_f
 
 
 # Nossa heurística é a quantidade
 # de passos mínimos estimados para
 # chegar ao final da fase
-def heuristica(estado, x):
+def heuristica(estado: str, x: int) -> int:
 #    return (4800 - x)/8
     estNum = np.reshape(list(map(int, estado.split(','))), (2*raio+1,2*raio+1))
     dist = np.abs(estNum[:raio+1,raio+2:raio+7]).sum()
@@ -218,9 +252,9 @@ def astar():
     mostrar = 0
  
     # Gera a árvore com o estado inicial do jogo 
-    env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)    
+    env = retro.make(game='SuperMarioWorld-Snes', state='DonutPlains1', players=1)    
     env.reset()
-    estado, x, y = getState(getRam(env), raio)  
+    estado, x, _ = getState(getRam(env), raio)  
     tree         = Tree(estado, g=0, h=heuristica(estado,x))
 
     # Se já existe alguma árvore, carrega
