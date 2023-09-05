@@ -105,6 +105,7 @@ def melhor_filho(tree: Tree) -> Tree | None:
     
     melhor_f: Tree
     melhor_f =  min(lista_f, key = lambda x: x[0])[1] # type: ignore
+    # ? Tem um bug de tipo aqui acim que não soube ajeitar
     
     return melhor_f
 
@@ -262,7 +263,7 @@ def astar():
         tree = pickle.load(open('AstarTree.pkl', 'rb'))
 
     # Repete enquanto não atingir objetivo    
-    obj, acoes  = atingiuObj(tree)
+     obj, acoes  = atingiuObj(tree)
 
     while not obj:
         tree, obj = expande(tree, env, mostrar)
