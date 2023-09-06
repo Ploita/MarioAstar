@@ -1,18 +1,13 @@
-from __future__ import annotations
-#!/usr/bin/env python
-# marioAstar.py
-# Author: Fabrício Olivetti de França
-#
-# A* algorithm for Super Mario World
-# using RLE
+# Adaptado de Fabrício Olivetti de França Mario A* https://folivetti.github.io/courses/IA/ 
+# todo adicionar as bibliotecas e criar o enviroment que faz isso funcionar
+# todo consertar os #type: ignore
 
+# ? porque tá dando tudo pula se ele não tá pulando na maior parte do tempo?
+from __future__ import annotations
 import sys
 import os
 import pickle
 import retro # type: ignore
-#import time
-#from numpy import int16
-#from random import choice
 from retro import RetroEnv # type: ignore
 from rominfo import *
 from utils import *
@@ -39,31 +34,26 @@ class Tree:
         ----------
         estado : str
             Representação N x N da tela do jogo, onde N é o raio de visão
+        action : str
+            Ação que leva a este estado
         filhos : list[Tree] | None, optional
             Lista de nós filhos deste nó, by default None
         pai : Tree | None, optional
-            Nó pai deste nó , by default None
+            Nó pai deste nó, by default None
         g : int, optional
             Valor de custo do Nó inicial até o Nó atual, pode ser lido como profundidade da árvore, by default 0
-        h : int, optional
-            Valor da heurística , by default 0
+        x : int
+            Posição no eixo X do Mario
         terminal : bool, optional
             Indicador se o Nó atual é terminal, by default False
-        obj : bool, optional
-            Indicador se o Nó atual atingiu o objetivo, by default False
-        contador : int, optional
-            Numeração dos nós da árvore, by default 1
         """
 
         self.estado = estado
-        self.filhos = filhos 
-
+        self.filhos = filhos
         self.g = g
         self.h = self.heuristica(estado, x)
-        
         self.eh_terminal = terminal
         self.eh_obj      = self.checaObj(x)
-        
         self.pai = pai
         self.action = action
 
@@ -83,28 +73,27 @@ class Tree:
         Tree | None
             Melhor nó filho ou None caso não haja nós filhos válidos
         """
-        # Implemente as tarefas abaixo e remove a instrução pass.
-        # 1) Se o nó é terminal, retorna None
+        #Se o nó é terminal, retorna None
         if self.eh_terminal:
             return None
         
-        # 2) Se o nó não tem filhos, retorna ele mesmo e seu f
+        # Se o nó não tem filhos, retorna ele mesmo
         if self.filhos is None:
             return self
 
-        # 3) Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
+        # Para cada filho de tree, aplica melhor_filho e filtra aqueles que resultarem em None
         lista_filhos: list[Tree] = []
         for filho in self.filhos:
             no_filho = filho.melhor_filho() 
             if no_filho is not None:
                 lista_filhos.append(no_filho) 
 
-        # 4) Se todos os filhos resultarem em terminal, marca tree como terminal e retorna None
+        #Se todos os filhos resultarem em terminal, marca o nó como terminal e retorna None
         if not lista_filhos:
             self.eh_terminal = True
             return None
 
-        # 5) Caso contrário retorna aquele com o menor f
+        # Caso contrário, retorna o nó com o menor f
         lista_f = [[filho.g + filho.h, filho] for filho in lista_filhos]
         
         melhor_f =  min(lista_f, key = lambda x: x[0])[1] # type: ignore
@@ -132,7 +121,6 @@ class Tree:
         estNum = np.reshape(list(map(int, estado.split(','))), (2*raio+1,2*raio+1)) #type: ignore
         dist = np.abs(estNum[:raio+1,raio+2:raio+7]).sum() #type: ignore
         # ? Tem um bug pra veificação de tipo aqui em cima que não soube ajeitar
-
         return ((4800 - x)/8) + 0.3*dist
     
     def checaObj(self, x: int) -> bool:
@@ -143,7 +131,7 @@ class Tree:
         estado : str
             Representação N x N da tela do jogo, onde N é o raio de visão
         x : int
-            Posição do Mario no eIXO x
+            Posição do Mario no eixo x
 
         Returns
         -------
@@ -169,6 +157,15 @@ class Tree:
         if self.filhos is None:
             return True
         return False
+    def rota(self) -> list[str]:
+        node_temp = self.melhor_filho()
+        acoes = []
+        while node_temp.pai is not None: # type: ignore
+            neto = node_temp
+            node_temp = node_temp.pai # type: ignore
+            acoes.append(neto.action)
+        
+        return acoes.reverse()
 
 
 def emula(acoes: list[str], env: RetroEnv, mostrar: bool) -> tuple[str, int, bool]:
@@ -224,37 +221,27 @@ def expande(tree: Tree, env: RetroEnv, mostrar: bool) -> tuple[Tree, bool]:
     """
     
     acoes = []
-
-    # Se a árvore já for um nó folha
-    # não tem ações a serem feitas 
+    # Se o nó já for um nó folha não tem ações a serem feitas 
     if tree.folha():
-        raiz  = tree
+        node_temp  = tree
         filho = tree
     else:
-
         # Busca pelo melhor nó folha
         filho = tree.melhor_filho()
-        
-        # Retorna para a raiz gravando as ações efetuadas
-        raiz = filho
-
-        # 1) Enquanto o pai de raiz não for None
-        while raiz.pai is not None: # type: ignore
-        
-        # 2) Atribua raiz a uma variável neto
-            neto = raiz
-
-        # 3) faça raiz = seu próprio pai
-            raiz = raiz.pai # type: ignore
+        node_temp = filho
+        # Faz a rota do melhor filho até a raiz
+        while node_temp.pai is not None: # type: ignore
+            neto = node_temp
+            node_temp = node_temp.pai # type: ignore
             acoes.append(neto.action)
 
     acoes.reverse()
     print('ACOES:  (  ', filho.g, ' ): ',  acoes) # type: ignore
         
-    # Vamos assumir que não atingiu o objetivo
     obj = False
 
     # Gera cada um dos filhos e verifica se atingiu objetivo
+    # todo descobrir o que exatamente tá rolando e atualizar essa parte
     filho.filhos = [] # type: ignore
     maxX         = 0
     for k, v in moves.items():
@@ -266,7 +253,7 @@ def expande(tree: Tree, env: RetroEnv, mostrar: bool) -> tuple[Tree, bool]:
         
     print('FALTA: ', filho.heuristica(estado, maxX)) # type: ignore
         
-    return raiz, obj # type: ignore
+    return node_temp, obj # type: ignore
 
 
 def atingiuObj(tree: Tree) -> bool:
@@ -314,8 +301,10 @@ def main():
         pickle.dump(tree, fw)
         fw.close()
         
-    #todo implementar o retorno da melhor rota
+    # // todo implementar o retorno da melhor rota 
+    #? descobrir se tá funcionando
     mostrar    = True
+    acoes = tree.rota()
     emula(acoes, env, mostrar)
     
 if __name__ == "__main__":
