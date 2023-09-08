@@ -164,8 +164,8 @@ class Tree:
             neto = node_temp
             node_temp = node_temp.pai # type: ignore
             acoes.append(neto.action)
-        
-        return acoes.reverse()
+            acoes.reverse()
+        return acoes
 
 
 def emula(acoes: list[str], env: RetroEnv, mostrar: bool) -> tuple[str, int, bool]:
@@ -278,7 +278,7 @@ def atingiuObj(tree: Tree) -> bool:
   
 def main():  
     # Se devemos mostrar a tela do jogo (+ lento) ou não (+ rápido)
-    mostrar = False
+    mostrar = True
  
     # Gera a árvore com o estado inicial do jogo 
     env = retro.make(game='SuperMarioWorld-Snes', state='YoshiIsland1', players=1)   # type: ignore
@@ -305,7 +305,7 @@ def main():
     #? descobrir se tá funcionando
     mostrar    = True
     acoes = tree.rota()
-    emula(acoes, env, mostrar)
+    emula([moves[acao] for acao in acoes], env, mostrar)
     
 if __name__ == "__main__":
   main()
