@@ -236,7 +236,7 @@ def expande(tree: Tree, env: RetroEnv, mostrar: bool) -> tuple[Tree, bool]:
             acoes.append(neto.action)
 
     acoes.reverse()
-    print('ACOES:  (  ', filho.g, ' ): ',  acoes) # type: ignore
+    print('ACOES:  (  ', filho.g, ' ): ',  acoes[200:]) # type: ignore
         
     obj = False
 
